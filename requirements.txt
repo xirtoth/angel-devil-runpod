@@ -2,8 +2,14 @@ fastapi
 uvicorn
 requests
 ollama
-# transformers 4.57.0 removed BeamSearchScorer, which Coqui TTS's XTTS code
-# still imports directly (https://github.com/huggingface/transformers/issues/40495).
-# Pin below that break until Coqui TTS ships a fix.
-transformers<4.57.0
+# Two separate breaking changes in transformers hit Coqui TTS's XTTS code:
+#   - 4.50+: PreTrainedModel stopped inheriting from GenerationMixin, so TTS's
+#     GPT2InferenceModel subclass loses .generate() entirely
+#     (AttributeError: 'GPT2InferenceModel' object has no attribute 'generate').
+#   - 4.57.0: removed BeamSearchScorer, which XTTS imports directly
+#     (https://github.com/huggingface/transformers/issues/40495).
+# Pin below the earlier (4.50) break -- it's a strict subset of safe versions,
+# no need to track both independently. Pin exact, not just an upper bound, so
+# a future transformers patch release can't reintroduce a surprise.
+transformers==4.49.0
 TTS
