@@ -1,7 +1,13 @@
 # Angel/Devil dialogue pod for RunPod.
 # LLM dialogue (Ollama + Llama 3.1 8B) + TTS (Coqui XTTS v2, two built-in voices),
 # served over FastAPI, auto-registers its public proxy URL with the VPS relay.
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+#
+# Pinned to a CUDA 12.8 build on purpose: RunPod can hand out Blackwell-generation
+# GPUs (RTX 50-series / RTX PRO Blackwell), whose sm_120 kernels only exist in
+# PyTorch builds compiled against CUDA 12.8+. An older cu121 build loads fine but
+# fails at the first actual inference with "CUDA error: no kernel image is
+# available for execution on the device".
+FROM pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
