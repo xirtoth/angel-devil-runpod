@@ -15,6 +15,22 @@ import torch
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
+# PyTorch 2.6+ flipped torch.load's default to weights_only=True, which
+# breaks loading Coqui TTS's XTTS checkpoint (it pickles config classes like
+# XttsConfig that aren't on PyTorch's auto-allowlist, raising
+# "Weights only load failed... Unsupported global"). We trust the source
+# (official Coqui-released XTTS v2 weights), so restore the old default
+# for this process rather than hand-allowlisting every class TTS pickles.
+_original_torch_load = torch.load
+
+
+def _patched_torch_load(*args, **kwargs):
+    kwargs.setdefault("weights_only", False)
+    return _original_torch_load(*args, **kwargs)
+
+
+torch.load = _patched_torch_load
+
 from TTS.api import TTS
 
 STATIC_DIR = "/workspace/halloween_pod/static"
