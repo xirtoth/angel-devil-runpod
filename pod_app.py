@@ -45,7 +45,14 @@ tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to("cuda" if torch.cu
 # names (XTTS v2 ships ~58 preset speakers, but exact names/spelling have
 # shifted between versions -- a hardcoded guess here is what broke this
 # earlier: "Baldur Torstein" simply doesn't exist in this build's list).
-_available_speakers = list(tts.speakers or [])
+# The public `tts.speakers` property doesn't exist on this installed version,
+# so reach into the same place the model's own synthesize() method does:
+# self.speaker_manager.speakers[speaker_id] inside tts_model.
+try:
+    _available_speakers = list(tts.speakers or [])
+except AttributeError:
+    _available_speakers = list(tts.synthesizer.tts_model.speaker_manager.speakers.keys())
+
 if len(_available_speakers) < 2:
     raise RuntimeError(f"Expected at least 2 built-in speakers, got: {_available_speakers}")
 DEVIL_SPEAKER = _available_speakers[0]
