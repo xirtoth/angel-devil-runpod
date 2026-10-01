@@ -40,7 +40,17 @@ ANGEL_SYSTEM = (
 
 print("Loading XTTS v2...", flush=True)
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to("cuda" if torch.cuda.is_available() else "cpu")
-print("XTTS v2 ready.", flush=True)
+
+# Pick two distinct built-in speakers programmatically instead of hardcoding
+# names (XTTS v2 ships ~58 preset speakers, but exact names/spelling have
+# shifted between versions -- a hardcoded guess here is what broke this
+# earlier: "Baldur Torstein" simply doesn't exist in this build's list).
+_available_speakers = list(tts.speakers or [])
+if len(_available_speakers) < 2:
+    raise RuntimeError(f"Expected at least 2 built-in speakers, got: {_available_speakers}")
+DEVIL_SPEAKER = _available_speakers[0]
+ANGEL_SPEAKER = _available_speakers[1]
+print(f"XTTS v2 ready. Using speakers -> devil: {DEVIL_SPEAKER!r}, angel: {ANGEL_SPEAKER!r}", flush=True)
 
 app = FastAPI()
 
@@ -81,9 +91,9 @@ def _generate_turn():
     with _history_lock:
         _history.append({"speaker": "enkeli", "text": enkeli_text})
 
-    tts.tts_to_file(text=piru_text, speaker="Baldur Torstein", language="en",
+    tts.tts_to_file(text=piru_text, speaker=DEVIL_SPEAKER, language="en",
                      file_path=f"{STATIC_DIR}/piru.wav")
-    tts.tts_to_file(text=enkeli_text, speaker="Claribel Dervla", language="en",
+    tts.tts_to_file(text=enkeli_text, speaker=ANGEL_SPEAKER, language="en",
                      file_path=f"{STATIC_DIR}/enkeli.wav")
 
     return {
@@ -97,6 +107,11 @@ def _generate_turn():
 @app.get("/")
 def index():
     return {"status": "RunPod AI Engine Online", "model": OLLAMA_MODEL}
+
+
+@app.get("/speakers")
+def speakers():
+    return {"all_speakers": _available_speakers, "devil": DEVIL_SPEAKER, "angel": ANGEL_SPEAKER}
 
 
 @app.get("/health")
