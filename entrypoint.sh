@@ -6,6 +6,15 @@ POD_PORT="${POD_PORT:-8005}"
 
 mkdir -p "${OLLAMA_MODELS:-/workspace/ollama-models}" "${TTS_HOME:-/workspace/tts_cache}" /workspace/halloween_pod/static
 
+# Some RunPod hosts hand containers a Docker embedded DNS resolver
+# (127.0.0.11) that can't actually reach anything upstream ("server
+# misbehaving" on every lookup, not just a slow start). Force known-good
+# public resolvers instead of trusting whatever the host gave us.
+echo "[entrypoint] overriding DNS resolvers..."
+{ echo "nameserver 1.1.1.1"; echo "nameserver 8.8.8.8"; } > /etc/resolv.conf 2>/dev/null \
+  && echo "[entrypoint] /etc/resolv.conf overridden" \
+  || echo "[entrypoint] could not override /etc/resolv.conf (read-only?), continuing with host default"
+
 echo "[entrypoint] starting ollama server..."
 ollama serve &
 
