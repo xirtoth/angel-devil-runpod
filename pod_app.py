@@ -71,8 +71,14 @@ except AttributeError:
 
 if len(_available_speakers) < 2:
     raise RuntimeError(f"Expected at least 2 built-in speakers, got: {_available_speakers}")
-DEVIL_SPEAKER = _available_speakers[0]
-ANGEL_SPEAKER = _available_speakers[1]
+
+# Optional explicit override via RunPod template env vars, so picking a
+# better-sounding voice is just a pod restart, not a new Docker build.
+# Falls back to the first two available speakers if unset/invalid.
+_devil_override = os.environ.get("DEVIL_SPEAKER")
+_angel_override = os.environ.get("ANGEL_SPEAKER")
+DEVIL_SPEAKER = _devil_override if _devil_override in _available_speakers else _available_speakers[0]
+ANGEL_SPEAKER = _angel_override if _angel_override in _available_speakers else _available_speakers[1]
 print(f"XTTS v2 ready. Using speakers -> devil: {DEVIL_SPEAKER!r}, angel: {ANGEL_SPEAKER!r}", flush=True)
 
 app = FastAPI()
