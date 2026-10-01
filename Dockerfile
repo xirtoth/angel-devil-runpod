@@ -26,10 +26,14 @@ RUN chmod +x entrypoint.sh
 # Network Volume mounted at /workspace, the ~5GB LLM + ~2GB XTTS weights are
 # only downloaded once and persist across future pods, instead of re-downloading
 # on every cold start.
+#
+# RUNPOD_SECRET_TOKEN is NOT set here on purpose -- this image is public, so
+# nothing secret belongs baked into it. Set it (and override VPS_UPDATE_URL if
+# needed) as environment variables on the RunPod pod template instead, matching
+# whatever HALLOWEEN_SECRET_TOKEN the VPS relay is actually running with.
 ENV OLLAMA_MODEL=llama3.1:8b \
     POD_PORT=8005 \
     VPS_UPDATE_URL=https://aihenkka.xyz/halloween-api/update-pod \
-    RUNPOD_SECRET_TOKEN=henkkahallo123 \
     OLLAMA_MODELS=/workspace/ollama-models \
     TTS_HOME=/workspace/tts_cache
 

@@ -21,7 +21,9 @@ STATIC_DIR = "/workspace/halloween_pod/static"
 os.makedirs(STATIC_DIR, exist_ok=True)
 
 VPS_UPDATE_URL = os.environ.get("VPS_UPDATE_URL", "https://aihenkka.xyz/halloween-api/update-pod")
-SECRET_TOKEN = os.environ.get("RUNPOD_SECRET_TOKEN", "henkkahallo123")
+# No default here on purpose: this is a public image/repo, so the real shared
+# secret must come from the RunPod template's environment variables, not source.
+SECRET_TOKEN = os.environ.get("RUNPOD_SECRET_TOKEN")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 PORT = int(os.environ.get("POD_PORT", "8005"))
 
@@ -116,6 +118,10 @@ def get_audio(filename: str):
 
 
 def _register_with_vps():
+    if not SECRET_TOKEN:
+        print("[register] RUNPOD_SECRET_TOKEN is not set - skipping registration. "
+              "Set it in the RunPod template's environment variables.", flush=True)
+        return
     pod_id = os.environ.get("RUNPOD_POD_ID", "local")
     my_url = f"https://{pod_id}-{PORT}.proxy.runpod.net"
     try:
