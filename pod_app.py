@@ -79,6 +79,9 @@ TOPICS = [
     "pretending to be sick to skip handing out candy to trick-or-treaters",
     "cutting in line for the haunted house", "copying someone else's costume idea on purpose",
     "staying out trick-or-treating well past curfew",
+    "making fun of someone's Halloween costume out loud",
+    "judging a stranger's weird outfit at the party",
+    "laughing at someone's homemade costume behind their back",
 ]
 
 DEVIL_SYSTEM_TEMPLATE = (
