@@ -6,6 +6,7 @@ URL with the VPS relay on startup and every few minutes after that, so the
 ESP32 (which only ever talks to the VPS) always has a live backend.
 """
 import os
+import random
 import threading
 import time
 
@@ -43,14 +44,51 @@ SECRET_TOKEN = os.environ.get("RUNPOD_SECRET_TOKEN")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 PORT = int(os.environ.get("POD_PORT", "8005"))
 
-DEVIL_SYSTEM = (
+# A random topic per turn keeps the conversation from converging on the same
+# few generic tropes (money/work were the repeat offenders in testing).
+# Picked for the classic "small vice vs. doing the right thing" shape --
+# actual moral micro-dilemmas, not just random fun activities.
+TOPICS = [
+    "eating the last slice without asking", "lying about why you're late",
+    "taking credit for a coworker's idea", "cutting in line",
+    "keeping extra change the cashier gave by mistake",
+    "gossiping about a friend behind their back",
+    "backing out of a promise to help a friend move",
+    "snapping at someone who didn't deserve it",
+    "holding a grudge instead of forgiving", "littering because the bin is far away",
+    "skipping the gym", "overindulging in dessert before dinner",
+    "procrastinating on a deadline", "ghosting a friend's message",
+    "flirting with someone while already taken", "taking a parking spot you don't deserve",
+    "honking in a fit of road rage", "pretending to be busy to avoid helping out",
+    "not telling the cashier they undercharged you", "exaggerating a story to look better",
+    "sneaking a peek at someone's phone", "calling in sick when you're not really sick",
+    "spreading a juicy rumor", "copying someone's homework",
+    "not admitting a mistake at work", "keeping the cash from a found wallet",
+    "judging someone based on appearance",
+    "envying a friend's success instead of being happy for them",
+    # Halloween-party specific -- this started life as a Halloween decoration prop
+    "eating way too much candy before the party even starts",
+    "stealing candy from the trick-or-treat bowl when no one's looking",
+    "scaring little trick-or-treaters way harder than necessary",
+    "spiking the Halloween punch", "ding-dong-ditching a neighbor's house",
+    "egging a house as a Halloween prank", "toilet-papering a neighbor's yard",
+    "hogging all the good candy and leaving the rest", "double-dipping at the snack table",
+    "jump-scaring a friend way too hard at the party", "telling a lie just to freak someone out",
+    "sneaking into the adults-only part of the Halloween party",
+    "not sharing Halloween candy with a younger sibling",
+    "pretending to be sick to skip handing out candy to trick-or-treaters",
+    "cutting in line for the haunted house", "copying someone else's costume idea on purpose",
+    "staying out trick-or-treating well past curfew",
+]
+
+DEVIL_SYSTEM_TEMPLATE = (
     "You are the Devil sitting on someone's shoulder. You are mischievous, tempting, "
-    "a little funny, and always try to talk the person into doing the fun/bad/lazy thing. "
+    "and a little funny. Right now you're trying to talk them into: {topic}. "
     "Reply with ONE short punchy sentence only. No stage directions, no quotes, just the line."
 )
-ANGEL_SYSTEM = (
+ANGEL_SYSTEM_TEMPLATE = (
     "You are the Angel sitting on someone's other shoulder. You are virtuous, kind, and "
-    "practical, and you directly counter whatever the Devil just said. "
+    "practical, and you directly counter whatever the Devil just said about: {topic}. "
     "Reply with ONE short punchy sentence only. No stage directions, no quotes, just the line."
 )
 
@@ -112,11 +150,12 @@ def _ask_ollama(system_prompt: str) -> str:
 
 
 def _generate_turn():
-    piru_text = _ask_ollama(DEVIL_SYSTEM)
+    topic = random.choice(TOPICS)
+    piru_text = _ask_ollama(DEVIL_SYSTEM_TEMPLATE.format(topic=topic))
     with _history_lock:
         _history.append({"speaker": "piru", "text": piru_text})
 
-    enkeli_text = _ask_ollama(ANGEL_SYSTEM)
+    enkeli_text = _ask_ollama(ANGEL_SYSTEM_TEMPLATE.format(topic=topic))
     with _history_lock:
         _history.append({"speaker": "enkeli", "text": enkeli_text})
 
